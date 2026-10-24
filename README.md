@@ -2,21 +2,7 @@
 
 A lightweight terminal client for [Mattermost](https://mattermost.com).
 
-```
-› 1 ● work                 3 │#dev  · work / Engineering
-  2 ● oss                 @1 │──────────────────────────────────────────────
-─────────────────────────────│alice  10:02
-▾ Engineering                │  the build on `main` is failing again @kurund
-  💬 Threads               1 │  💬 3 replies
- ▾ FAVORITES                 │  🎉 1  👍 2
-  • # dev                  3 │bob  10:05
- ▾ CHANNELS                  │  ▏func main() {
-    # town-square            │  ▏    fmt.Println("hi")
-▾ Direct messages            │  ▏}
- • ● alice                 1 │──────────────────────────────────────────────
-   ◐ bob                     │> Message #dev
- Ctrl+K jump · Alt+1-9 server · Alt+J/K channel · Alt+Shift+J/K unread · ↑/Tab select
-```
+![termost demo: quick switcher, a thread reply with emoji completion, search, switching servers and a DM](demo/demo.gif)
 
 ## Features
 
