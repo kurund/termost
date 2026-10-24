@@ -4,6 +4,25 @@ A lightweight terminal client for [Mattermost](https://mattermost.com).
 
 ![termost demo: quick switcher, a thread reply with emoji completion, search, switching servers and a DM](demo/demo.gif)
 
+## Quick start
+
+```sh
+curl -fsSL https://github.com/kurund/termost/releases/latest/download/termost_linux_$(uname -m).tar.gz | tar xz termost
+mkdir -p ~/.local/bin && mv termost ~/.local/bin/
+
+mkdir -p ~/.config/termost
+cat > ~/.config/termost/config.toml <<'EOF'
+[[server]]
+name = "work"
+url = "https://chat.example.com"
+username = "your-username"
+EOF
+
+termost
+```
+
+This works on x86_64 and arm64 and assumes `~/.local/bin` is on your `PATH`. termost asks for your password on first launch. See [Installing](#installing) for other options and [Configuration](#configuration) for the full config.
+
 ## Features
 
 - **Several servers in one window**, one shown at a time, with connection state and unread badges for the others
@@ -36,16 +55,18 @@ Numbers vary with server size and how many channels you have open.
 
 - Linux (desktop notifications use D-Bus; the clipboard uses `wl-clipboard` or `xclip`, with OSC 52 as a fallback for copying)
 - A Mattermost server where you log in with a username and password (SSO, MFA and personal access tokens are not supported yet)
-- Go 1.26 or newer to build, or Nix
+- To build from source: Go 1.26 or newer, or Nix
 
 ## Installing
 
-Download a prebuilt binary for amd64 or arm64 from the [releases page](https://github.com/kurund/termost/releases), extract it and copy `termost` anywhere on your `PATH`:
+Prebuilt binaries for x86_64 and arm64 are on the [releases page](https://github.com/kurund/termost/releases). Download the latest one for your machine and copy `termost` anywhere on your `PATH`:
 
 ```sh
-tar xzf termost_*_linux_amd64.tar.gz
-install -m 755 termost ~/.local/bin/
+curl -fsSL https://github.com/kurund/termost/releases/latest/download/termost_linux_$(uname -m).tar.gz | tar xz termost
+mkdir -p ~/.local/bin && mv termost ~/.local/bin/
 ```
+
+Each archive also contains `config.example.toml`, the README and the license. `checksums.txt` on the release page has SHA-256 sums.
 
 Or install with Go 1.26+:
 
