@@ -1,0 +1,20 @@
+# Copy to ~/.config/termost/config.toml
+
+[[server]]
+name = "work"
+url = "https://chat.example.com"
+username = "your-username"
+
+[[server]]
+name = "community"
+url = "https://community.mattermost.com"
+username = "your-username"
+
+[notifications]
+desktop = true   # freedesktop notifications over D-Bus
+bell = false     # terminal bell
+osc = false      # OSC 777 notifications (foot, WezTerm, Ghostty)
+
+[ui]
+dm_limit = 30    # most recent DMs to list; unread ones always show. 0 = all
+mouse = true     # click and scroll; hold Shift to select text with the mouse
