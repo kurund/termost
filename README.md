@@ -21,7 +21,7 @@ EOF
 termost
 ```
 
-This works on x86_64 and arm64 and assumes `~/.local/bin` is on your `PATH`. termost asks for your password on first launch. See [Installing](#installing) for other options and [Configuration](#configuration) for the full config.
+This assumes `~/.local/bin` is on your `PATH`. termost asks for your password on first launch. See [Installing](#installing) for other options and [Configuration](#configuration) for the full config.
 
 ## Features
 
@@ -40,14 +40,14 @@ This works on x86_64 and arm64 and assumes `~/.local/bin` is on your `PATH`. ter
 
 ## Footprint
 
-One process, one static binary, no runtime dependencies. Measured side by side with the official desktop app on the same machine, connected to the same two servers:
+One process, one static binary. Measured side by side with the official desktop app on the same machine, connected to the same two servers:
 
 | | termost | Mattermost Desktop 6.3 (Electron) |
 |---|---|---|
 | Memory (PSS) | 35-60 MB | about 1.3 GB |
 | CPU while idle | about 1% of one core | about 20% of one core |
 | Processes / threads | 1 / 15 | 19 / 259 |
-| Install size | 33 MB (23 MB built with `-ldflags="-s -w"`) | 1.4 GB including Electron |
+| Install size | 23 MB | 1.4 GB including Electron |
 
 Numbers vary with server size and how many channels you have open.
 
@@ -74,27 +74,11 @@ Or install with Go 1.26+:
 go install github.com/kurund/termost/cmd/termost@latest
 ```
 
-`termost version` prints the installed version.
-
-## Building
-
-With Nix, the flake provides Go, gopls and golangci-lint:
-
-```sh
-nix develop
-go build -o bin/termost ./cmd/termost
-```
-
-Without Nix, install Go 1.26+ and run the same `go build` command. Copy `bin/termost` anywhere on your `PATH`. Add `-ldflags="-s -w"` for a smaller binary without debug symbols.
+To build from a clone, see [Development](#development).
 
 ## Configuration
 
-termost reads `~/.config/termost/config.toml`. Start from the example:
-
-```sh
-mkdir -p ~/.config/termost
-cp config.example.toml ~/.config/termost/config.toml
-```
+termost reads `~/.config/termost/config.toml`. `config.example.toml` (in the release archive and the repo) has every option:
 
 ```toml
 [[server]]
@@ -128,6 +112,7 @@ termost logout [server...]
 termost channels     # list teams, channels and DMs with unread counts
 termost tail         # print new messages from all servers as they arrive
 termost notify-test  # send a test desktop notification
+termost version
 ```
 
 Commands act on all configured servers unless you name some.
@@ -228,8 +213,11 @@ Put `/paste` or `/upload <path>` at the end of a message to send the text and th
 
 ## Development
 
+The Nix flake provides Go, gopls, golangci-lint and GoReleaser. Without Nix, install Go 1.26+.
+
 ```sh
 nix develop
+go build -o bin/termost ./cmd/termost
 go test ./...
 golangci-lint run ./...
 ```
@@ -240,7 +228,9 @@ For a local test server:
 docker run -d --name termost-mm -p 8065:8065 mattermost/mattermost-preview
 ```
 
-Then point a `[[server]]` entry at `http://localhost:8065`. The first account you create on it becomes the system admin.
+Then point a `[[server]]` entry at `http://localhost:8065`. The first account you create on it becomes the system admin. `nix develop .#demo -c demo/record.sh` re-records the demo GIF against it.
+
+Pushing a `v*` tag (e.g. `v0.2.0`) builds the release binaries and publishes them on GitHub.
 
 Code layout:
 
@@ -255,6 +245,7 @@ internal/markdown  chat-oriented markdown renderer
 internal/notify    notification rules and backends
 internal/emoji     emoji names to Unicode
 internal/clip      clipboard images
+demo               seed data and VHS tape for the README GIF
 ```
 
 ## License
