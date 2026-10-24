@@ -3,6 +3,7 @@ package notify
 import (
 	"fmt"
 	"log/slog"
+	"slices"
 	"strings"
 	"sync"
 	"time"
@@ -37,6 +38,7 @@ type Notifier struct {
 
 	mu         sync.Mutex
 	conn       *dbus.Conn
+	markup     bool
 	dbusFailed bool
 	shown      map[string]*shown
 }
@@ -59,13 +61,17 @@ func (n *Notifier) Desktop(msg Message) error {
 		return err
 	}
 	replaces, summary := n.prepare(msg, time.Now())
+	body := Body(msg.Body)
+	if n.markup {
+		body = escapeMarkup(body)
+	}
 	hints := map[string]dbus.Variant{
 		"urgency":  dbus.MakeVariant(byte(1)),
 		"category": dbus.MakeVariant("im.received"),
 	}
 	var id uint32
 	err = conn.Object(dbusDest, dbusPath).Call(dbusDest+".Notify", 0,
-		"termost", replaces, "", summary, Body(msg.Body), []string{}, hints, int32(-1)).Store(&id)
+		"termost", replaces, "", summary, body, []string{}, hints, int32(-1)).Store(&id)
 	if err != nil {
 		slog.Warn("desktop notification failed", "err", err)
 		n.dbusFailed = true
@@ -123,7 +129,20 @@ func (n *Notifier) bus() (*dbus.Conn, error) {
 		return nil, err
 	}
 	n.conn = conn
+	var caps []string
+	if err := conn.Object(dbusDest, dbusPath).Call(dbusDest+".GetCapabilities", 0).Store(&caps); err != nil {
+		slog.Debug("reading notification capabilities failed", "err", err)
+	}
+	n.markup = slices.Contains(caps, "body-markup")
 	return conn, nil
+}
+
+var markupEscaper = strings.NewReplacer("&", "&amp;", "<", "&lt;", ">", "&gt;")
+
+// escapeMarkup keeps notification daemons that render body markup from
+// interpreting tags or images in message text.
+func escapeMarkup(s string) string {
+	return markupEscaper.Replace(s)
 }
 
 func (n *Notifier) prepare(msg Message, now time.Time) (replaces uint32, summary string) {

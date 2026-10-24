@@ -5,8 +5,11 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"log/slog"
 	"net/http"
+	"os"
+	"path/filepath"
 	"strings"
 	"sync"
 	"sync/atomic"
@@ -403,12 +406,29 @@ func (s *Session) Search(ctx context.Context, teamID, terms string) (*model.Post
 	return res, err
 }
 
-func (s *Session) Download(ctx context.Context, fileID string) ([]byte, error) {
-	data, resp, err := s.Client.GetFile(ctx, fileID)
+// DownloadTo streams a file to path, which only appears once complete.
+func (s *Session) DownloadTo(ctx context.Context, fileID, path string) error {
+	r, err := s.Client.DoAPIGet(ctx, "/files/"+fileID, "")
 	if err != nil {
-		return nil, s.check(resp, err)
+		return s.check(model.BuildResponse(r), err)
 	}
-	return data, nil
+	defer func() { _ = r.Body.Close() }()
+	if err := os.MkdirAll(filepath.Dir(path), 0o700); err != nil {
+		return err
+	}
+	tmp, err := os.CreateTemp(filepath.Dir(path), ".download-*")
+	if err != nil {
+		return err
+	}
+	defer func() { _ = os.Remove(tmp.Name()) }()
+	if _, err := io.Copy(tmp, r.Body); err != nil {
+		_ = tmp.Close()
+		return err
+	}
+	if err := tmp.Close(); err != nil {
+		return err
+	}
+	return os.Rename(tmp.Name(), path)
 }
 
 // Command runs a server slash command and returns any text it responds with.

@@ -284,15 +284,8 @@ func (m *Model) openAttachments(post *model.Post) tea.Cmd {
 				return noticeMsg{err: err}
 			}
 			if _, err := os.Stat(path); err != nil {
-				data, err := sess.Download(m.ctx, f.Id)
-				if err != nil {
+				if err := sess.DownloadTo(m.ctx, f.Id, path); err != nil {
 					return noticeMsg{err: fmt.Errorf("download %s: %w", f.Name, err)}
-				}
-				if err := os.MkdirAll(filepath.Dir(path), 0o700); err != nil {
-					return noticeMsg{err: err}
-				}
-				if err := os.WriteFile(path, data, 0o600); err != nil {
-					return noticeMsg{err: err}
 				}
 			}
 			cmd := exec.Command("xdg-open", path)

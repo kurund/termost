@@ -97,3 +97,11 @@ func TestBody(t *testing.T) {
 		t.Errorf("len = %d", len(got))
 	}
 }
+
+func TestEscapeMarkup(t *testing.T) {
+	got := escapeMarkup(`<img src="file:///home/me/x.png"> Tom & Jerry <b>`)
+	want := `&lt;img src="file:///home/me/x.png"&gt; Tom &amp; Jerry &lt;b&gt;`
+	if got != want {
+		t.Errorf("escapeMarkup = %q, want %q", got, want)
+	}
+}
