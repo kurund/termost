@@ -52,6 +52,23 @@ Numbers vary with server size and how many channels you have open.
 - A Mattermost server where you log in with a username and password (SSO, MFA and personal access tokens are not supported yet)
 - Go 1.26 or newer to build, or Nix
 
+## Installing
+
+Download a prebuilt binary for amd64 or arm64 from the [releases page](https://github.com/kurund/termost/releases), extract it and copy `termost` anywhere on your `PATH`:
+
+```sh
+tar xzf termost_*_linux_amd64.tar.gz
+install -m 755 termost ~/.local/bin/
+```
+
+Or install with Go 1.26+:
+
+```sh
+go install github.com/kurund/termost/cmd/termost@latest
+```
+
+`termost version` prints the installed version.
+
 ## Building
 
 With Nix, the flake provides Go, gopls and golangci-lint:

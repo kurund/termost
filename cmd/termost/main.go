@@ -10,6 +10,7 @@ import (
 	"os"
 	"os/signal"
 	"path/filepath"
+	"runtime/debug"
 	"sort"
 	"strings"
 	"sync"
@@ -35,9 +36,12 @@ commands:
   channels     list teams, channels and DMs with unread counts
   tail         print new messages from all servers as they arrive
   notify-test  send a test desktop notification
+  version      print the termost version
 
 Servers default to all entries in the config file.
 `
+
+var version = "dev"
 
 func main() {
 	cmd, names := "ui", os.Args[1:]
@@ -47,6 +51,10 @@ func main() {
 	if len(names) > 0 && strings.HasPrefix(names[0], "-") {
 		fmt.Fprint(os.Stderr, usage)
 		os.Exit(2)
+	}
+	if cmd == "version" {
+		fmt.Println("termost", buildVersion())
+		return
 	}
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
@@ -90,6 +98,16 @@ func run(ctx context.Context, cmd string, names []string) error {
 	}
 	fmt.Fprint(os.Stderr, usage)
 	return fmt.Errorf("unknown command %q", cmd)
+}
+
+func buildVersion() string {
+	if version != "dev" {
+		return version
+	}
+	if info, ok := debug.ReadBuildInfo(); ok && info.Main.Version != "" && info.Main.Version != "(devel)" {
+		return info.Main.Version
+	}
+	return version
 }
 
 func login(ctx context.Context, store *auth.TokenStore, servers []config.Server) error {

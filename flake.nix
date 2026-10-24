@@ -9,7 +9,7 @@
       pkgs = nixpkgs.legacyPackages.${system};
     in {
       devShells.${system}.default = pkgs.mkShell {
-        packages = with pkgs; [ go gopls golangci-lint ];
+        packages = with pkgs; [ go gopls golangci-lint goreleaser ];
       };
     };
 }
