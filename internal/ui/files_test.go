@@ -5,6 +5,8 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+
+	"github.com/mattermost/mattermost/server/public/model"
 )
 
 func TestCompletePath(t *testing.T) {
@@ -116,6 +118,25 @@ func TestUploadPathsAndDrops(t *testing.T) {
 	for _, in := range []string{"hello world", filepath.Join(dir, "missing.png"), dir, "relative.png", ""} {
 		if _, ok := droppedFiles(in); ok {
 			t.Errorf("droppedFiles(%q) should be false", in)
+		}
+	}
+}
+
+func TestAttachmentPath(t *testing.T) {
+	id := model.NewId()
+	got, err := attachmentPath("/cache", &model.FileInfo{Id: id, Name: "../../report.pdf"})
+	if want := filepath.Join("/cache/termost/files", id, "report.pdf"); err != nil || got != want {
+		t.Fatalf("attachmentPath = %q, %v; want %q", got, err, want)
+	}
+	for _, f := range []*model.FileInfo{
+		{Id: "../../../.config/autostart", Name: "x.desktop"},
+		{Id: "", Name: "x"},
+		{Id: id, Name: ".."},
+		{Id: id, Name: ""},
+		{Id: id, Name: "/"},
+	} {
+		if got, err := attachmentPath("/cache", f); err == nil {
+			t.Errorf("attachmentPath(%q, %q) = %q, want an error", f.Id, f.Name, got)
 		}
 	}
 }

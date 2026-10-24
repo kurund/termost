@@ -17,6 +17,7 @@ import (
 	"github.com/yuin/goldmark/text"
 
 	"github.com/kurund/termost/internal/emoji"
+	"github.com/kurund/termost/internal/termsafe"
 )
 
 const cacheLimit = 4000
@@ -53,7 +54,7 @@ func Render(src string, width int, me string) string {
 		return out
 	}
 
-	source := []byte(src)
+	source := []byte(termsafe.Strip(src))
 	r := &renderer{src: source, me: me}
 	out = strings.Join(r.blocks(parser.Parse(text.NewReader(source)), max(width, 4)), "\n")
 

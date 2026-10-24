@@ -16,6 +16,7 @@ import (
 
 	"github.com/kurund/termost/internal/config"
 	"github.com/kurund/termost/internal/store"
+	"github.com/kurund/termost/internal/termsafe"
 )
 
 var ErrUnauthorized = errors.New("session expired or invalid, run `termost login`")
@@ -246,7 +247,7 @@ func apiError(resp *model.Response, err error) error {
 	}
 	var appErr *model.AppError
 	if errors.As(err, &appErr) && appErr.Message != "" {
-		return fmt.Errorf("%s (%s)", appErr.Message, appErr.Id)
+		return fmt.Errorf("%s (%s)", termsafe.Line(appErr.Message), termsafe.Line(appErr.Id))
 	}
 	return err
 }

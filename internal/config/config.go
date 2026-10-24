@@ -3,6 +3,8 @@ package config
 import (
 	"errors"
 	"fmt"
+	"net"
+	"net/url"
 	"os"
 	"path/filepath"
 	"strings"
@@ -83,8 +85,29 @@ func (c *Config) validate() error {
 		}
 		seen[s.Name] = true
 		s.URL = strings.TrimRight(s.URL, "/")
+		if err := checkURL(s.URL); err != nil {
+			return fmt.Errorf("server %q: %w", s.Name, err)
+		}
 	}
 	return nil
+}
+
+func checkURL(raw string) error {
+	u, err := url.Parse(raw)
+	if err != nil || u.Host == "" {
+		return fmt.Errorf("invalid url %q", raw)
+	}
+	switch u.Scheme {
+	case "https":
+		return nil
+	case "http":
+		host := u.Hostname()
+		if ip := net.ParseIP(host); host == "localhost" || (ip != nil && ip.IsLoopback()) {
+			return nil
+		}
+		return fmt.Errorf("url %q sends your password unencrypted; use https (http is only allowed for localhost)", raw)
+	}
+	return fmt.Errorf("url %q must start with https://", raw)
 }
 
 // Select returns the named servers, or all servers when names is empty.

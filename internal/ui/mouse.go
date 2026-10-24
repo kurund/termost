@@ -2,6 +2,7 @@ package ui
 
 import (
 	"fmt"
+	neturl "net/url"
 	"os/exec"
 	"strings"
 	"time"
@@ -276,6 +277,11 @@ func oscLinkTarget(seq string) string {
 }
 
 func openURL(url string) tea.Cmd {
+	if !openableURL(url) {
+		return func() tea.Msg {
+			return noticeMsg{err: fmt.Errorf("not opening %q: only http, https and mailto links open", url)}
+		}
+	}
 	return func() tea.Msg {
 		cmd := exec.Command("xdg-open", url)
 		if err := cmd.Start(); err != nil {
@@ -284,4 +290,18 @@ func openURL(url string) tea.Cmd {
 		go func() { _ = cmd.Wait() }()
 		return noticeMsg{text: "Opened " + url}
 	}
+}
+
+func openableURL(raw string) bool {
+	u, err := neturl.Parse(raw)
+	if err != nil {
+		return false
+	}
+	switch strings.ToLower(u.Scheme) {
+	case "http", "https":
+		return u.Host != ""
+	case "mailto":
+		return true
+	}
+	return false
 }

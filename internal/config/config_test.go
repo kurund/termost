@@ -60,9 +60,11 @@ username = "kurund"
 
 func TestLoadFileErrors(t *testing.T) {
 	cases := map[string]string{
-		"empty":     ``,
-		"missing":   "[[server]]\nname = \"a\"\nurl = \"https://x\"\n",
-		"duplicate": "[[server]]\nname = \"a\"\nurl = \"https://x\"\nusername = \"u\"\n[[server]]\nname = \"a\"\nurl = \"https://y\"\nusername = \"u\"\n",
+		"empty":      ``,
+		"missing":    "[[server]]\nname = \"a\"\nurl = \"https://x\"\n",
+		"duplicate":  "[[server]]\nname = \"a\"\nurl = \"https://x\"\nusername = \"u\"\n[[server]]\nname = \"a\"\nurl = \"https://y\"\nusername = \"u\"\n",
+		"plain http": "[[server]]\nname = \"a\"\nurl = \"http://chat.example.com\"\nusername = \"u\"\n",
+		"no scheme":  "[[server]]\nname = \"a\"\nurl = \"chat.example.com\"\nusername = \"u\"\n",
 	}
 	for name, body := range cases {
 		t.Run(name, func(t *testing.T) {
@@ -85,5 +87,18 @@ func TestNotificationsOverride(t *testing.T) {
 	}
 	if cfg.Notifications.Desktop || !cfg.Notifications.OSC {
 		t.Errorf("got %+v", cfg.Notifications)
+	}
+}
+
+func TestCheckURL(t *testing.T) {
+	for _, ok := range []string{"https://chat.example.com", "http://localhost:8065", "http://127.0.0.1:8065", "http://[::1]:8065"} {
+		if err := checkURL(ok); err != nil {
+			t.Errorf("checkURL(%q) = %v", ok, err)
+		}
+	}
+	for _, bad := range []string{"http://chat.example.com", "http://localhost.evil.com", "ftp://x", "https://", "chat.example.com"} {
+		if err := checkURL(bad); err == nil {
+			t.Errorf("checkURL(%q) should fail", bad)
+		}
 	}
 }

@@ -10,6 +10,7 @@ import (
 	"github.com/godbus/dbus/v5"
 
 	"github.com/kurund/termost/internal/config"
+	"github.com/kurund/termost/internal/termsafe"
 )
 
 const (
@@ -145,13 +146,5 @@ func Body(text string) string {
 }
 
 func oscSafe(s string) string {
-	return strings.Map(func(r rune) rune {
-		if r == ';' {
-			return ','
-		}
-		if r < 0x20 || r == 0x7f {
-			return -1
-		}
-		return r
-	}, s)
+	return strings.ReplaceAll(termsafe.Line(s), ";", ",")
 }

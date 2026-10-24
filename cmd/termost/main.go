@@ -23,6 +23,7 @@ import (
 	"github.com/kurund/termost/internal/config"
 	"github.com/kurund/termost/internal/mm"
 	"github.com/kurund/termost/internal/notify"
+	"github.com/kurund/termost/internal/termsafe"
 	"github.com/kurund/termost/internal/ui"
 )
 
@@ -249,7 +250,7 @@ func channels(ctx context.Context, store *auth.TokenStore, servers []config.Serv
 		if err != nil {
 			return fmt.Errorf("%s: %w", srv.Name, err)
 		}
-		fmt.Printf("%s (@%s)\n", srv.Name, sess.Me.Username)
+		fmt.Printf("%s (@%s)\n", srv.Name, termsafe.Line(sess.Me.Username))
 
 		dms := map[string]*model.Channel{}
 		dmMembers := map[string]model.ChannelMember{}
@@ -258,7 +259,7 @@ func channels(ctx context.Context, store *auth.TokenStore, servers []config.Serv
 			if err != nil {
 				return fmt.Errorf("%s/%s: %w", srv.Name, team.Name, err)
 			}
-			fmt.Printf("  %s\n", team.DisplayName)
+			fmt.Printf("  %s\n", termsafe.Line(team.DisplayName))
 			sort.Slice(chans, func(i, j int) bool { return chans[i].DisplayName < chans[j].DisplayName })
 			for _, ch := range chans {
 				if ch.IsGroupOrDirect() {
@@ -270,7 +271,7 @@ func channels(ctx context.Context, store *auth.TokenStore, servers []config.Serv
 				if ch.Type == model.ChannelTypePrivate {
 					prefix = "🔒"
 				}
-				fmt.Printf("    %s %-30s %s\n", prefix, ch.DisplayName, unreadLabel(ch, members[ch.Id]))
+				fmt.Printf("    %s %-30s %s\n", prefix, termsafe.Line(ch.DisplayName), unreadLabel(ch, members[ch.Id]))
 			}
 		}
 
@@ -285,7 +286,7 @@ func channels(ctx context.Context, store *auth.TokenStore, servers []config.Serv
 		}
 		sort.Slice(ids, func(i, j int) bool { return dms[ids[i]].LastPostAt > dms[ids[j]].LastPostAt })
 		for _, id := range ids {
-			fmt.Printf("    @ %-30s %s\n", names[id], unreadLabel(dms[id], dmMembers[id]))
+			fmt.Printf("    @ %-30s %s\n", termsafe.Line(names[id]), unreadLabel(dms[id], dmMembers[id]))
 		}
 		fmt.Println()
 	}
@@ -385,7 +386,7 @@ func printPosted(ev mm.Event) {
 	if post.RootId != "" {
 		where += " (thread)"
 	}
-	fmt.Printf("[%s] %s: %s\n", ev.Server, where, post.Message)
+	fmt.Printf("[%s] %s: %s\n", ev.Server, termsafe.Line(where), termsafe.Strip(post.Message))
 }
 
 func readPassword(prompt string) (string, error) {

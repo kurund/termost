@@ -279,14 +279,16 @@ func (m *Model) openAttachments(post *model.Post) tea.Cmd {
 			return noticeMsg{err: err}
 		}
 		for _, f := range infos {
-			dir := filepath.Join(cache, "termost", "files", f.Id)
-			path := filepath.Join(dir, filepath.Base(f.Name))
+			path, err := attachmentPath(cache, f)
+			if err != nil {
+				return noticeMsg{err: err}
+			}
 			if _, err := os.Stat(path); err != nil {
 				data, err := sess.Download(m.ctx, f.Id)
 				if err != nil {
 					return noticeMsg{err: fmt.Errorf("download %s: %w", f.Name, err)}
 				}
-				if err := os.MkdirAll(dir, 0o700); err != nil {
+				if err := os.MkdirAll(filepath.Dir(path), 0o700); err != nil {
 					return noticeMsg{err: err}
 				}
 				if err := os.WriteFile(path, data, 0o600); err != nil {
@@ -301,6 +303,16 @@ func (m *Model) openAttachments(post *model.Post) tea.Cmd {
 		}
 		return noticeMsg{text: fmt.Sprintf("Opened %d attachment(s)", len(infos))}
 	}
+}
+
+// attachmentPath places a download under the cache, refusing file IDs and
+// names from the server that would escape its directory.
+func attachmentPath(cache string, f *model.FileInfo) (string, error) {
+	name := filepath.Base(f.Name)
+	if !model.IsValidId(f.Id) || name == "." || name == ".." || name == string(filepath.Separator) {
+		return "", fmt.Errorf("refusing attachment with unsafe id %q or name %q", f.Id, f.Name)
+	}
+	return filepath.Join(cache, "termost", "files", f.Id, name), nil
 }
 
 func fileInfos(post *model.Post) []*model.FileInfo {

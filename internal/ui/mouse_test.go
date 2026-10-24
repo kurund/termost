@@ -42,3 +42,22 @@ func TestZoneAt(t *testing.T) {
 		t.Error("zones are half-open")
 	}
 }
+
+func TestOpenableURL(t *testing.T) {
+	tests := map[string]bool{
+		"https://example.com/a?b=c": true,
+		"HTTP://example.com":        true,
+		"mailto:alice@example.com":  true,
+		"https://":                  false,
+		"file:///etc/passwd":        false,
+		"javascript:alert(1)":       false,
+		"smb://host/share":          false,
+		"--help":                    false,
+		"":                          false,
+	}
+	for url, want := range tests {
+		if got := openableURL(url); got != want {
+			t.Errorf("openableURL(%q) = %v, want %v", url, got, want)
+		}
+	}
+}

@@ -54,7 +54,7 @@ Numbers vary with server size and how many channels you have open.
 ## Requirements
 
 - Linux (desktop notifications use D-Bus; the clipboard uses `wl-clipboard` or `xclip`, with OSC 52 as a fallback for copying)
-- A Mattermost server where you log in with a username and password (SSO, MFA and personal access tokens are not supported yet)
+- A Mattermost server over https where you log in with a username and password (SSO, MFA and personal access tokens are not supported yet). Plain http is only accepted for `localhost`
 - To build from source: Go 1.26 or newer, or Nix
 
 ## Installing
