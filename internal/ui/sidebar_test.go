@@ -7,6 +7,7 @@ import (
 	"github.com/mattermost/mattermost/server/public/model"
 
 	"github.com/kurund/termost/internal/mm"
+	"github.com/kurund/termost/internal/store"
 )
 
 func TestSidebarWindowPinsServers(t *testing.T) {
@@ -87,4 +88,41 @@ func TestSidebarScrollsToOpenThreads(t *testing.T) {
 		}
 	}
 	t.Errorf("Threads row %d not drawn; drew %v", want, m.sidebarDrawn)
+}
+
+func TestRowsHideTeamRowForSingleTeam(t *testing.T) {
+	kinds := func(m *Model) map[rowKind]int {
+		out := map[rowKind]int{}
+		for _, r := range m.rows() {
+			out[r.kind]++
+		}
+		return out
+	}
+
+	m := threadsTestModel(true)
+	if got := kinds(m)[rowTeam]; got != 2 {
+		t.Errorf("two teams: %d team rows, want 2", got)
+	}
+
+	st := store.NewServer("work", &model.User{Id: "me", Username: "me"})
+	ch := &model.Channel{Id: "c1", TeamId: "t1", Name: "town-square", DisplayName: "Town Square", Type: model.ChannelTypeOpen}
+	st.AddTeam(&model.Team{Id: "t1", DisplayName: "Acme"}, []*model.Channel{ch}, nil)
+	st.CRT = true
+	m.servers["work"] = st
+	m.collapsed[st.Name+"/t1"] = true
+
+	if got := kinds(m)[rowTeam]; got != 0 {
+		t.Errorf("single team: %d team rows, want 0", got)
+	}
+	for _, r := range m.rows() {
+		switch {
+		case r.kind == rowThreads && r.depth != 0, r.kind == rowCategory && r.depth != 0:
+			t.Errorf("single team: %v row at depth %d, want 0", r.kind, r.depth)
+		case r.kind == rowChannel && r.channel == "c1" && r.depth != 1:
+			t.Errorf("single team: channel at depth %d, want 1", r.depth)
+		}
+	}
+	if m.rowIndex(chanRef{"work", "c1"}) < 0 {
+		t.Error("a team collapsed before it became the only one still hides its channels")
+	}
 }

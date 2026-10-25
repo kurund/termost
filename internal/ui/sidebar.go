@@ -54,6 +54,7 @@ func (m *Model) isCollapsed(r row) bool {
 }
 
 // rows lists every server, then the active server's teams, channels and DMs.
+// A server with a single team gets no team row; its sections move up a level.
 func (m *Model) rows() []row {
 	var rows []row
 	for _, sess := range m.sessions {
@@ -66,25 +67,31 @@ func (m *Model) rows() []row {
 	if st == nil {
 		return rows
 	}
+	depth := 0
+	if len(st.Teams) > 1 {
+		depth = 1
+	}
 	for _, team := range st.Teams {
-		r := row{kind: rowTeam, server: name, team: team.Id}
-		rows = append(rows, r)
-		if m.isCollapsed(r) {
-			continue
+		if depth > 0 {
+			r := row{kind: rowTeam, server: name, team: team.Id}
+			rows = append(rows, r)
+			if m.isCollapsed(r) {
+				continue
+			}
 		}
 		if st.CRT {
-			rows = append(rows, row{kind: rowThreads, server: name, team: team.Id, depth: 1})
+			rows = append(rows, row{kind: rowThreads, server: name, team: team.Id, depth: depth})
 		}
 		for _, cat := range st.TeamCategories(team.Id) {
 			if len(cat.Channels) == 0 {
 				continue
 			}
-			c := row{kind: rowCategory, server: name, team: team.Id, category: &cat, depth: 1}
+			c := row{kind: rowCategory, server: name, team: team.Id, category: &cat, depth: depth}
 			rows = append(rows, c)
 			collapsed := m.isCollapsed(c)
 			for _, id := range cat.Channels {
 				if !collapsed || m.keepWhenCollapsed(st, id) {
-					rows = append(rows, row{kind: rowChannel, server: name, team: team.Id, channel: id, depth: 2})
+					rows = append(rows, row{kind: rowChannel, server: name, team: team.Id, channel: id, depth: depth + 1})
 				}
 			}
 		}
@@ -249,14 +256,14 @@ func (m *Model) renderRow(r row, width int) string {
 
 	case rowThreads:
 		totals := st.ThreadTotals(r.team)
-		label := "  💬 Threads"
+		label := strings.Repeat(" ", r.depth+1) + "💬 Threads"
 		if totals.Unread > 0 || totals.Mentions > 0 {
 			label = unreadStyle.Render(label)
 		}
 		return withBadge(label, totals.Unread, totals.Mentions, width)
 
 	case rowCategory:
-		return faint.Render(" " + arrow + strings.ToUpper(r.category.Name))
+		return faint.Render(strings.Repeat(" ", r.depth) + arrow + strings.ToUpper(r.category.Name))
 
 	case rowDMHeader:
 		return faint.Render(arrow + "Direct messages")
