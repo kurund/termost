@@ -15,7 +15,10 @@ nix develop -c go test ./internal/store -run TestCRTCounts   # single test
 nix develop -c golangci-lint run ./...
 nix develop -c gofmt -l .
 nix develop .#demo -c demo/record.sh                         # re-record demo/demo.gif (needs termost-mm)
+nix build .                                                  # the flake package
 ```
+
+After changing `go.mod`/`go.sum`, update `vendorHash` in `flake.nix`: `nix build .` fails and prints the new hash.
 
 Verify SDK, Bubble Tea and lipgloss APIs by grepping the module cache (`$(go env GOMODCACHE)/github.com/mattermost/mattermost/server/public@v0.5.0/model`, `charm.land/bubbletea/v2@v2.1.0`, ...) rather than from memory: Bubble Tea v2 differs from v1 (`View() tea.View`, `tea.KeyPressMsg`, `v.AltScreen`, key strings like `alt+shift+j` / `alt+J`).
 

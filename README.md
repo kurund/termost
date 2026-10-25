@@ -68,6 +68,15 @@ mkdir -p ~/.local/bin && mv termost ~/.local/bin/
 
 Each archive also contains `config.example.toml`, the README and the license. `checksums.txt` on the release page has SHA-256 sums.
 
+With Nix, run it without installing, or add it to your profile:
+
+```sh
+nix run github:kurund/termost
+nix profile install github:kurund/termost
+```
+
+On NixOS, add the flake as an input and use `inputs.termost.packages.${pkgs.stdenv.hostPlatform.system}.default`.
+
 Or install with Go 1.26+:
 
 ```sh

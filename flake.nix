@@ -5,16 +5,34 @@
 
   outputs = { self, nixpkgs }:
     let
-      system = "x86_64-linux";
-      pkgs = nixpkgs.legacyPackages.${system};
+      systems = [ "x86_64-linux" "aarch64-linux" ];
+      forAllSystems = f: nixpkgs.lib.genAttrs systems (system: f nixpkgs.legacyPackages.${system});
     in {
-      devShells.${system} = {
+      packages = forAllSystems (pkgs: {
+        default = pkgs.buildGoModule (finalAttrs: {
+          pname = "termost";
+          version = "0-unstable-${self.shortRev or self.dirtyShortRev or "dev"}";
+          src = self;
+          vendorHash = "sha256-c3SCnzjCSr6U9LC7UZRdUmb+FY0gWUywvnd5jI2N8gw=";
+          subPackages = [ "cmd/termost" ];
+          ldflags = [ "-s" "-w" "-X main.version=${finalAttrs.version}" ];
+          meta = {
+            description = "Lightweight terminal client for Mattermost";
+            homepage = "https://github.com/kurund/termost";
+            license = nixpkgs.lib.licenses.agpl3Plus;
+            mainProgram = "termost";
+            platforms = systems;
+          };
+        });
+      });
+
+      devShells = forAllSystems (pkgs: {
         default = pkgs.mkShell {
           packages = with pkgs; [ go gopls golangci-lint goreleaser ];
         };
         demo = pkgs.mkShell {
           packages = with pkgs; [ go vhs ];
         };
-      };
+      });
     };
 }
