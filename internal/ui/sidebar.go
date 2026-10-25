@@ -161,7 +161,11 @@ func (m *Model) sidebarWindow(total, height, focus int) []int {
 func (m *Model) renderSidebar(outer, height int) string {
 	rows := m.rows()
 	focus := m.cursor
-	if m.focus != focusSidebar {
+	switch {
+	case m.focus == focusSidebar:
+	case m.threads != nil:
+		focus = max(m.threadsRowIndex(rows), 0)
+	default:
 		focus = max(m.rowIndex(m.current), 0)
 	}
 	m.sidebarDrawn = m.sidebarWindow(len(rows), height, focus)

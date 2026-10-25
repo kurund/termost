@@ -554,21 +554,35 @@ func (m *Model) stepChannel(dir int, unreadOnly bool) tea.Cmd {
 		return nil
 	}
 	start := m.rowIndex(m.current)
+	if m.threads != nil {
+		start = m.threadsRowIndex(rows)
+	}
 	for i := 1; i <= len(rows); i++ {
 		r := rows[((start+dir*i)%len(rows)+len(rows))%len(rows)]
-		if r.kind != rowChannel {
-			continue
-		}
-		if unreadOnly {
-			st := m.servers[r.server]
-			u, mentions := st.Unread(r.channel)
-			if mentions == 0 && (u == 0 || st.Muted(r.channel)) {
+		st := m.servers[r.server]
+		switch r.kind {
+		case rowThreads:
+			if totals := st.ThreadTotals(r.team); unreadOnly && totals.Unread == 0 && totals.Mentions == 0 {
 				continue
 			}
+			return m.openThreadsList(r.server, r.team)
+		case rowChannel:
+			if u, mentions := st.Unread(r.channel); unreadOnly && mentions == 0 && (u == 0 || st.Muted(r.channel)) {
+				continue
+			}
+			return m.open(chanRef{r.server, r.channel})
 		}
-		return m.open(chanRef{r.server, r.channel})
 	}
 	return nil
+}
+
+func (m *Model) threadsRowIndex(rows []row) int {
+	for i, r := range rows {
+		if r.kind == rowThreads && r.server == m.threads.server && r.team == m.threads.team {
+			return i
+		}
+	}
+	return -1
 }
 
 func (m *Model) switchServer(name string) tea.Cmd {

@@ -1,11 +1,14 @@
 package ui
 
 import (
+	"context"
 	"strings"
 	"testing"
 
 	"github.com/mattermost/mattermost/server/public/model"
 
+	"github.com/kurund/termost/internal/config"
+	"github.com/kurund/termost/internal/mm"
 	"github.com/kurund/termost/internal/store"
 )
 
@@ -82,7 +85,9 @@ func threadsTestModel(crt bool) *Model {
 	}
 	st.CRT = crt
 	st.SetThreadTotals("t2", store.ThreadTotals{Unread: 3, Mentions: 1})
-	return &Model{servers: map[string]*store.Server{"work": st}, active: "work", current: chanRef{"work", "c-t2"}}
+	m := New(context.Background(), []*mm.Session{{Server: config.Server{Name: "work"}}}, nil, config.UI{}, nil)
+	m.servers["work"], m.active, m.current = st, "work", chanRef{"work", "c-t2"}
+	return m
 }
 
 func TestSwitcherThreads(t *testing.T) {
