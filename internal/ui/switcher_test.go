@@ -1,6 +1,13 @@
 package ui
 
-import "testing"
+import (
+	"strings"
+	"testing"
+
+	"github.com/mattermost/mattermost/server/public/model"
+
+	"github.com/kurund/termost/internal/store"
+)
 
 func TestFuzzyScore(t *testing.T) {
 	if _, ok := fuzzyScore("xyz", "town-square"); ok {
@@ -65,4 +72,48 @@ func names(items []switchItem) string {
 		out += it.name
 	}
 	return out
+}
+
+func threadsTestModel(crt bool) *Model {
+	st := store.NewServer("work", &model.User{Id: "me", Username: "me"})
+	for _, team := range []string{"t1", "t2"} {
+		ch := &model.Channel{Id: "c-" + team, TeamId: team, Name: "town-square", DisplayName: "Town Square", Type: model.ChannelTypeOpen}
+		st.AddTeam(&model.Team{Id: team, DisplayName: strings.ToUpper(team)}, []*model.Channel{ch}, map[string]model.ChannelMember{ch.Id: {ChannelId: ch.Id}})
+	}
+	st.CRT = crt
+	st.SetThreadTotals("t2", store.ThreadTotals{Unread: 3, Mentions: 1})
+	return &Model{servers: map[string]*store.Server{"work": st}, active: "work", current: chanRef{"work", "c-t2"}}
+}
+
+func TestSwitcherThreads(t *testing.T) {
+	var threads []switchItem
+	for _, it := range threadsTestModel(true).switchItems() {
+		if it.threadsTeam != "" {
+			threads = append(threads, it)
+		}
+	}
+	if len(threads) != 2 || threads[1].threadsTeam != "t2" || threads[1].unread != 3 || threads[1].mentions != 1 {
+		t.Fatalf("threads items = %+v", threads)
+	}
+	if got := filterItems(threads, "thr"); len(got) != 2 {
+		t.Errorf("query thr matched %d threads items, want 2", len(got))
+	}
+	for _, it := range threadsTestModel(false).switchItems() {
+		if it.threadsTeam != "" {
+			t.Errorf("threads item without CRT: %+v", it)
+		}
+	}
+}
+
+func TestToggleThreads(t *testing.T) {
+	m := threadsTestModel(true)
+	m.toggleThreads()
+	if m.threads == nil || m.threads.team != "t2" || m.threads.back != (chanRef{"work", "c-t2"}) {
+		t.Fatalf("threads = %+v, want t2 opened from the current channel", m.threads)
+	}
+
+	m = threadsTestModel(false)
+	if m.toggleThreads(); m.threads != nil || m.notice == "" {
+		t.Errorf("without CRT: threads = %+v, notice = %q", m.threads, m.notice)
+	}
 }

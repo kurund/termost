@@ -28,7 +28,7 @@ This assumes `~/.local/bin` is on your `PATH`. termost asks for your password on
 - **Several servers in one window**, one shown at a time, with connection state and unread badges for the others
 - **Your Mattermost sidebar**: teams, Favorites and custom categories (with their sorting and collapsed state), DMs with online/away/DND status, closed DMs hidden as in the web app
 - **Unread and mention tracking** that matches the official clients, including Collapsed Reply Threads
-- **Threads**: reply counts, a thread view, replying, and a followed-threads list per team
+- **Threads**: reply counts, a thread view, replying, and a followed-threads list per team (`Alt+T`)
 - **Reactions**: shown under messages with who reacted on the selected one, `+:emoji:` shortcut, an emoji picker and click to toggle
 - **Markdown** rendered for the terminal: code blocks, lists, quotes, tables, clickable links, emoji shortcodes, highlighted mentions
 - **Files**: upload from disk (or drag files onto the terminal) or the clipboard, open attachments with your default app
@@ -124,6 +124,7 @@ Commands act on all configured servers unless you name some.
 | Key | Action |
 |---|---|
 | `Ctrl+K` | Jump to a channel or DM on the current server |
+| `Alt+T` | Open or close the followed threads list for the current team (also in `Ctrl+K` as "Threads") |
 | `Ctrl+F` | Search messages on the current server (`↑`/`↓` and `Enter` open a result in its thread, `Esc` goes back) |
 | `Alt+1` … `Alt+9` | Switch server |
 | `Alt+J` / `Alt+K` | Next / previous channel |

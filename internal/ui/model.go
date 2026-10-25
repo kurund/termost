@@ -422,6 +422,8 @@ func (m *Model) handleKey(msg tea.KeyPressMsg) tea.Cmd {
 		return m.stepChannel(-1, true)
 	case "alt+J", "alt+shift+j":
 		return m.stepChannel(1, true)
+	case "alt+t":
+		return m.toggleThreads()
 	case "alt+1", "alt+2", "alt+3", "alt+4", "alt+5", "alt+6", "alt+7", "alt+8", "alt+9":
 		i := int(msg.String()[4] - '1')
 		if i < len(m.sessions) {
@@ -1251,13 +1253,16 @@ func (m *Model) statusBar() string {
 		return truncate(" "+m.notice, m.width)
 	}
 	hint := "Ctrl+K jump · Alt+1-9 server · Alt+J/K channel · Alt+Shift+J/K unread · ↑/Tab select · Ctrl+C quit"
+	if st := m.servers[m.active]; st != nil && st.CRT {
+		hint = "Ctrl+K jump · Alt+T threads · Alt+1-9 server · Alt+J/K channel · Alt+Shift+J/K unread · ↑/Tab select · Ctrl+C quit"
+	}
 	switch {
 	case m.editing != nil:
 		hint = "Editing message · Enter save · Esc cancel"
 	case m.search != nil && m.thread == nil:
 		hint = m.searchHint()
 	case m.threads != nil && m.thread == nil:
-		hint = "j/k move · Enter open thread · Esc back"
+		hint = "j/k move · Enter open thread · Esc/Alt+T back"
 	case m.focus == focusMessages:
 		hint = "j/k move · Enter/r thread · + react · y copy · Y link · e edit · d delete · o open files · Esc back"
 	case m.thread != nil:

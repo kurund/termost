@@ -49,6 +49,27 @@ func (m *Model) openThreadsList(server, team string) tea.Cmd {
 	return m.loadThreadsList(server, team)
 }
 
+// toggleThreads opens the Threads list for the current team, or closes it.
+func (m *Model) toggleThreads() tea.Cmd {
+	if m.threads != nil {
+		return m.closeThreadsList()
+	}
+	st := m.servers[m.active]
+	if st == nil || !st.CRT {
+		m.notice = "Threads need Collapsed Reply Threads, which is off on this server"
+		return nil
+	}
+	channel := ""
+	if m.current.server == m.active {
+		channel = m.current.channel
+	}
+	team := st.ThreadTeam(channel)
+	if team == "" {
+		return nil
+	}
+	return m.openThreadsList(m.active, team)
+}
+
 func (m *Model) closeThreadsList() tea.Cmd {
 	back := m.threads.back
 	m.threads = nil

@@ -14,15 +14,16 @@ import (
 )
 
 type switchItem struct {
-	ref      chanRef
-	name     string
-	slug     string
-	prefix   string
-	detail   string
-	unread   int64
-	mentions int64
-	muted    bool
-	lastPost int64
+	ref         chanRef
+	threadsTeam string
+	name        string
+	slug        string
+	prefix      string
+	detail      string
+	unread      int64
+	mentions    int64
+	muted       bool
+	lastPost    int64
 }
 
 func (it switchItem) hasUnread() bool {
@@ -82,6 +83,20 @@ func (m *Model) switchItems() []switchItem {
 	}
 	for _, id := range st.DMs() {
 		add(id, "")
+	}
+	if st.CRT {
+		for _, team := range st.Teams {
+			totals := st.ThreadTotals(team.Id)
+			items = append(items, switchItem{
+				ref:         chanRef{server: name},
+				threadsTeam: team.Id,
+				name:        "Threads",
+				prefix:      "💬 ",
+				detail:      team.DisplayName,
+				unread:      totals.Unread,
+				mentions:    totals.Mentions,
+			})
+		}
 	}
 	return items
 }
@@ -189,9 +204,12 @@ func (m *Model) switcherKey(msg tea.KeyPressMsg) tea.Cmd {
 		if m.switcher.sel >= len(items) {
 			return nil
 		}
-		ref := items[m.switcher.sel].ref
+		it := items[m.switcher.sel]
+		if it.threadsTeam != "" {
+			return tea.Batch(m.closeSwitcher(), m.openThreadsList(it.ref.server, it.threadsTeam))
+		}
 		m.focus = focusInput
-		return tea.Batch(m.closeSwitcher(), m.open(ref))
+		return tea.Batch(m.closeSwitcher(), m.open(it.ref))
 	}
 	var cmd tea.Cmd
 	m.switcher.input, cmd = m.switcher.input.Update(msg)
