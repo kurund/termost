@@ -84,6 +84,7 @@ type Model struct {
 	collapsed      map[string]bool
 	cursor         int
 	sidebarOffset  int
+	sidebarDrawn   []int
 	current        chanRef
 	loadingOlder   bool
 	focus          focusArea

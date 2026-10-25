@@ -123,25 +123,52 @@ func (m *Model) rowIndex(ref chanRef) int {
 	return -1
 }
 
+// pinnedRows is how many rows at the top (servers and the divider) stay in
+// place while the rest scrolls; none when that would leave too little room.
+func (m *Model) pinnedRows(height int) int {
+	n := len(m.sessions) + 1
+	if n > height-3 {
+		return 0
+	}
+	return n
+}
+
+// sidebarWindow picks the row indices to draw, keeping the pinned rows and
+// scrolling the rest so focus stays visible.
+func (m *Model) sidebarWindow(total, height, focus int) []int {
+	pinned := m.pinnedRows(height)
+	scrollH := height - pinned
+	if !m.sidebarFree && focus >= pinned {
+		if focus < m.sidebarOffset {
+			m.sidebarOffset = focus
+		}
+		if focus >= m.sidebarOffset+scrollH {
+			m.sidebarOffset = focus - scrollH + 1
+		}
+	}
+	m.sidebarOffset = max(min(m.sidebarOffset, total-scrollH), pinned)
+
+	drawn := make([]int, 0, height)
+	for i := 0; i < pinned; i++ {
+		drawn = append(drawn, i)
+	}
+	for i := m.sidebarOffset; i < total && len(drawn) < height; i++ {
+		drawn = append(drawn, i)
+	}
+	return drawn
+}
+
 func (m *Model) renderSidebar(outer, height int) string {
 	rows := m.rows()
 	focus := m.cursor
 	if m.focus != focusSidebar {
 		focus = max(m.rowIndex(m.current), 0)
 	}
-	if !m.sidebarFree {
-		if focus < m.sidebarOffset {
-			m.sidebarOffset = focus
-		}
-		if focus >= m.sidebarOffset+height {
-			m.sidebarOffset = focus - height + 1
-		}
-	}
-	m.sidebarOffset = max(min(m.sidebarOffset, len(rows)-height), 0)
+	m.sidebarDrawn = m.sidebarWindow(len(rows), height, focus)
 
 	width := outer - 1
 	lines := make([]string, 0, height)
-	for i := m.sidebarOffset; i < len(rows) && len(lines) < height; i++ {
+	for _, i := range m.sidebarDrawn {
 		line := m.renderRow(rows[i], width)
 		isCurrent := rows[i].kind == rowChannel && rows[i].server == m.current.server && rows[i].channel == m.current.channel && m.threads == nil
 		if m.threads != nil && rows[i].kind == rowThreads && rows[i].server == m.threads.server && rows[i].team == m.threads.team {

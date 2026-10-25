@@ -79,10 +79,10 @@ func (m *Model) sidebarZone(width, height int) {
 				return nil
 			}
 			rows := m.rows()
-			i := m.sidebarOffset + y
-			if i >= len(rows) {
+			if y >= len(m.sidebarDrawn) || m.sidebarDrawn[y] >= len(rows) {
 				return nil
 			}
+			i := m.sidebarDrawn[y]
 			if m.focus == focusSidebar {
 				m.cursor = i
 			}
