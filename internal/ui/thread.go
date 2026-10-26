@@ -158,7 +158,10 @@ func (m *Model) openThread(post *model.Post) tea.Cmd {
 	}
 	m.channelSelected = m.selected
 	m.thread = &threadView{ref: m.current, rootID: rootID}
-	m.selected = post.Id
+	m.selected = ""
+	if post.RootId != "" {
+		m.selected = post.Id
+	}
 	m.input.Placeholder = "Reply in thread"
 	m.focus = focusInput
 	m.refreshMessages()
