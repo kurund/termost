@@ -29,9 +29,11 @@
       devShells = forAllSystems (pkgs: {
         default = pkgs.mkShell {
           packages = with pkgs; [ go gopls golangci-lint goreleaser ];
+          CGO_ENABLED = "0";
         };
         demo = pkgs.mkShell {
           packages = with pkgs; [ go vhs ];
+          CGO_ENABLED = "0";
         };
       });
     };
