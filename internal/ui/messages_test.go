@@ -59,14 +59,45 @@ func TestReactionNamesAndHits(t *testing.T) {
 	if got := ansi.Strip(expanded[0]); got != "👍 alice, you  🎉 bob" {
 		t.Errorf("expanded = %q", got)
 	}
-	if len(hits) != 2 || hits[0] != (reactionHit{0, 0, 13, "+1"}) || hits[1] != (reactionHit{0, 15, 21, "tada"}) {
+	if len(hits) != 2 || hits[0] != (hit{line: 0, x0: 0, x1: 13, emoji: "+1"}) || hits[1] != (hit{line: 0, x0: 15, x1: 21, emoji: "tada"}) {
 		t.Errorf("hits = %+v", hits)
 	}
 
 	content, spans := renderPosts(st, []*model.Post{post}, 60, renderOpts{selected: "p"})
 	lines := strings.Split(content, "\n")
-	h := spans[0].reactions[1]
+	h := spans[0].hits[1]
 	if got := ansi.Strip(lines[h.line]); ansi.Cut(got, h.x0, h.x1) != "🎉 bob" {
 		t.Errorf("hit points at %q in %q", ansi.Cut(got, h.x0, h.x1), got)
+	}
+}
+
+func TestAttachmentHits(t *testing.T) {
+	st := store.NewServer("t", &model.User{Id: "me", Username: "me"})
+	shot := &model.FileInfo{Id: "f1", Name: "shot.png", MimeType: "image/png", Size: 75}
+	post := &model.Post{Id: "p", UserId: "me", RootId: "r", Message: "graph", Metadata: &model.PostMetadata{
+		Files:     []*model.FileInfo{shot},
+		Reactions: []*model.Reaction{{UserId: "me", EmojiName: "+1"}},
+	}}
+
+	content, spans := renderPosts(st, []*model.Post{post}, 60, renderOpts{})
+	lines := strings.Split(content, "\n")
+	var files, emoji int
+	for _, h := range spans[0].hits {
+		got := ansi.Strip(ansi.Cut(lines[h.line], h.x0, h.x1))
+		switch {
+		case h.file == shot:
+			files++
+			if !strings.HasPrefix(got, "🖼 shot.png") {
+				t.Errorf("attachment hit points at %q", got)
+			}
+		case h.emoji == "+1":
+			emoji++
+			if got != "👍 1" {
+				t.Errorf("reaction hit points at %q", got)
+			}
+		}
+	}
+	if files != 1 || emoji != 1 {
+		t.Errorf("hits = %+v", spans[0].hits)
 	}
 }

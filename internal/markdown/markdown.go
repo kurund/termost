@@ -273,7 +273,8 @@ func (r *renderer) inline(n ast.Node, style lipgloss.Style) []span {
 		return []span{{string(n.Label(r.src)), linkStyle.Hyperlink(url)}}
 
 	case *ast.Image:
-		return []span{{"🖼 " + spansText(r.inlines(n, plain)) + " (" + string(n.Destination) + ")", faint}}
+		dest := string(n.Destination)
+		return []span{{"🖼 " + spansText(r.inlines(n, plain)) + " (" + dest + ")", faint.Hyperlink(dest)}}
 
 	case *ast.RawHTML:
 		var b strings.Builder

@@ -18,14 +18,15 @@ const groupGap = 5 * time.Minute
 type postSpan struct {
 	id         string
 	start, end int
-	reactions  []reactionHit
+	hits       []hit
 }
 
-// reactionHit is where a reaction chip was drawn: a content line and the
-// columns it covers.
-type reactionHit struct {
+// hit is a clickable part of a post: a reaction chip or an attachment line,
+// with its content line and the columns it covers.
+type hit struct {
 	line, x0, x1 int
 	emoji        string
+	file         *model.FileInfo
 }
 
 type renderOpts struct {
@@ -61,7 +62,7 @@ func renderPosts(st *store.Server, posts []*model.Post, width int, o renderOpts)
 
 		start := len(lines)
 		var body []string
-		var reactions []reactionHit
+		var hits []hit
 		switch {
 		case strings.HasPrefix(post.Type, model.PostSystemMessagePrefix):
 			body = strings.Split(faint.Italic(true).Width(inner).Render(at.Format("15:04")+"  "+post.Message), "\n")
@@ -75,11 +76,11 @@ func renderPosts(st *store.Server, posts []*model.Post, width int, o renderOpts)
 				}
 				body = append(body, style.Render(name)+"  "+faint.Render(at.Format("15:04")))
 			}
-			plines, hits := postLines(st, post, inner-2, !o.thread, post.Id == o.selected)
-			for _, h := range hits {
+			plines, phits := postLines(st, post, inner-2, !o.thread, post.Id == o.selected)
+			for _, h := range phits {
 				h.line += start + len(body)
 				h.x0, h.x1 = h.x0+3, h.x1+3
-				reactions = append(reactions, h)
+				hits = append(hits, h)
 			}
 			for _, line := range plines {
 				body = append(body, "  "+line)
@@ -97,7 +98,7 @@ func renderPosts(st *store.Server, posts []*model.Post, width int, o renderOpts)
 		for _, l := range body {
 			lines = append(lines, gutter+l)
 		}
-		spans = append(spans, postSpan{id: post.Id, start: start, end: len(lines), reactions: reactions})
+		spans = append(spans, postSpan{id: post.Id, start: start, end: len(lines), hits: hits})
 
 		if o.thread && i == 0 && len(posts) > 1 {
 			n := len(posts) - 1
@@ -124,7 +125,7 @@ func startsGroup(prev, post *model.Post) bool {
 
 // postLines renders a post body as lines no wider than width, and where its
 // reaction chips are; names lists who reacted instead of counts.
-func postLines(st *store.Server, post *model.Post, width int, replyMark, names bool) ([]string, []reactionHit) {
+func postLines(st *store.Server, post *model.Post, width int, replyMark, names bool) ([]string, []hit) {
 	prefix, rest := "", ""
 	if replyMark && post.RootId != "" {
 		prefix, rest = faint.Render("↳ "), "  "
@@ -143,7 +144,12 @@ func postLines(st *store.Server, post *model.Post, width int, replyMark, names b
 			lines = append(lines, edited)
 		}
 	}
-	for _, f := range files(post) {
+	var fhits []hit
+	infos := fileInfos(post)
+	for i, f := range files(post) {
+		if i < len(infos) {
+			fhits = append(fhits, hit{line: len(lines), x0: lipgloss.Width(rest), x1: width, file: infos[i]})
+		}
 		lines = append(lines, faint.Render(truncate(f, inner)))
 	}
 	rlines, hits := reactionLines(st, post, inner, names)
@@ -164,7 +170,7 @@ func postLines(st *store.Server, post *model.Post, width int, replyMark, names b
 			lines[i] = rest + lines[i]
 		}
 	}
-	return lines, hits
+	return lines, append(fhits, hits...)
 }
 
 func files(post *model.Post) []string {
@@ -207,9 +213,9 @@ func humanSize(n int64) string {
 	return fmt.Sprintf("%d B", n)
 }
 
-func reactionLines(st *store.Server, post *model.Post, width int, names bool) ([]string, []reactionHit) {
+func reactionLines(st *store.Server, post *model.Post, width int, names bool) ([]string, []hit) {
 	var lines []string
-	var hits []reactionHit
+	var hits []hit
 	line, lineW := "", 0
 	for _, r := range st.Reactions(post) {
 		glyph, ok := emoji.Lookup(r.Emoji)
@@ -234,7 +240,7 @@ func reactionLines(st *store.Server, post *model.Post, width int, names bool) ([
 			line += "  "
 			lineW += 2
 		}
-		hits = append(hits, reactionHit{line: len(lines), x0: lineW, x1: lineW + w, emoji: r.Emoji})
+		hits = append(hits, hit{line: len(lines), x0: lineW, x1: lineW + w, emoji: r.Emoji})
 		line += chip
 		lineW += w
 	}

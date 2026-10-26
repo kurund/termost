@@ -264,13 +264,17 @@ func (m *Model) command(text string) tea.Cmd {
 	}
 }
 
-// openAttachments downloads a post's files to the cache and opens them.
 func (m *Model) openAttachments(post *model.Post) tea.Cmd {
 	infos := fileInfos(post)
 	if len(infos) == 0 {
 		m.notice = "No attachments on this message"
 		return nil
 	}
+	return m.openFiles(infos)
+}
+
+// openFiles downloads files to the cache and opens them.
+func (m *Model) openFiles(infos []*model.FileInfo) tea.Cmd {
 	sess := m.byName[m.current.server]
 	m.notice = fmt.Sprintf("Opening %d attachment(s)…", len(infos))
 	return func() tea.Msg {

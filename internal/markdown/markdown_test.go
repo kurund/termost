@@ -128,6 +128,13 @@ func TestHyperlinks(t *testing.T) {
 	}
 }
 
+func TestImageIsLinked(t *testing.T) {
+	out := Render("![graph](https://example.com/g.png)", 60, "")
+	if !strings.Contains(out, "\x1b]8;;https://example.com/g.png") {
+		t.Errorf("image not hyperlinked: %q", out)
+	}
+}
+
 func TestRenderStripsControlSequences(t *testing.T) {
 	out := Render("hi \x1b]52;c;cHduZWQ=\x07 \x1b[41mred\x1b[0m \u009b31m", 80, "me")
 	for _, seq := range []string{"\x1b]52", "\x1b[41m", "\x07", "\u009b"} {

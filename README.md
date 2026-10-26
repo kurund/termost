@@ -31,7 +31,7 @@ This assumes `~/.local/bin` is on your `PATH`. termost asks for your password on
 - **Threads**: reply counts, a thread view, replying, and a followed-threads list per team (`Alt+T`)
 - **Reactions**: shown under messages with who reacted on the selected one, `+:emoji:` shortcut, an emoji picker and click to toggle
 - **Markdown** rendered for the terminal: code blocks, lists, quotes, tables, clickable links, emoji shortcodes, highlighted mentions
-- **Files**: upload from disk (or drag files onto the terminal) or the clipboard, open attachments with your default app
+- **Files**: upload from disk (or drag files onto the terminal) or the clipboard, open attachments with your default app (`o` on a message, or click the file)
 - **Desktop notifications** following your Mattermost notification settings, collapsed per channel
 - **Quick switcher** (`Ctrl+K`) with fuzzy search, plus `@user`, `~channel` and `:emoji:` completion
 - **Message search** (`Ctrl+F` or `/search`) across all teams on a server, with Mattermost's search syntax
@@ -190,6 +190,7 @@ Below 70 columns the sidebar hides; `Tab` shows it full screen.
 | Click a reaction | Add or remove your own reaction with that emoji |
 | Double-click a message | Open its thread |
 | Click a link | Open it in your browser |
+| Click an attachment | Download it and open it with your default app |
 | Click a suggestion or switcher entry | Pick it |
 | Scroll wheel | Scroll messages (older history loads at the top), the sidebar or a list |
 

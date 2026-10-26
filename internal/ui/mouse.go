@@ -9,6 +9,7 @@ import (
 
 	tea "charm.land/bubbletea/v2"
 	"github.com/charmbracelet/x/ansi"
+	"github.com/mattermost/mattermost/server/public/model"
 )
 
 const (
@@ -196,10 +197,14 @@ func (m *Model) messagesClick(x, y int, double bool) tea.Cmd {
 		if line < s.start || line >= s.end {
 			continue
 		}
-		for _, h := range s.reactions {
-			if h.line == line && x >= h.x0 && x < h.x1 {
-				return m.toggleReaction(m.current, s.id, h.emoji)
+		for _, h := range s.hits {
+			if h.line != line || x < h.x0 || x >= h.x1 {
+				continue
 			}
+			if h.file != nil {
+				return m.openFiles([]*model.FileInfo{h.file})
+			}
+			return m.toggleReaction(m.current, s.id, h.emoji)
 		}
 		i := m.indexOf(s.id)
 		if i < 0 {
